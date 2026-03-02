@@ -4,6 +4,9 @@ output: html_document
 ---
 
 ## Names and EIDs of Group Members
+Stephanie Kuo sk59344
+Tony Huang tkh699
+Annika Shivam aes5956
 
 
 
@@ -209,4 +212,15 @@ If the results from the previous question were unexpected, make use of systems t
 
 
 ## Discussion
+Putting it all together, what did you learn from your data?
+* Reflect on the process of conducting this project. What was challenging, what have you
+learned from the process itself?
 
+* Was there anything unexpected that you found in your analysis? Or was everything
+essentially as you expected?
+
+* Include acknowledgements for any help received
+
+* Report the contribution of each member (i.e. who did what).
+
+**answer goes here**
