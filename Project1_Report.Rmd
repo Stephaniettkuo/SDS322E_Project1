@@ -21,7 +21,7 @@ library(tidyverse)
 
 
 
-```{r, cache=FALSE, message=FALSE}
+```{r, cache=TRUE, message=FALSE}
 ## This chunk may take a long time to run. Set 'cache=TRUE' in the chunk options
 ## to make it run faster in subsequent knittings.
 
@@ -49,11 +49,22 @@ How many active (3x3x3) speedcubers are there registered with the WCA? For this 
 
 
 ```{r}
-## Add your code here
+# filter competitions between 2022 and 2024
+comp_22_24 <- competitions|>
+  filter(year >= 2022 & year <= 2024)
+
+# save all active cubers in a new dataset and count how many there are
+active_cuber <- results|>
+  #join on competitionId to filter 22-24 competitions
+  inner_join(comp_22_24, by = c("competitionId" = "id"))|>
+  group_by(personId)|>
+  summarise(num_competition = n_distinct(competitionId))|>
+  filter(num_competition >= 2)
+nrow(active_cuber)
 
 ```
 
-**Write your answer here.**
+**There are 39482 active 3x3x3 speedcubers that are registered with th WCS between 2022-2024, measured by if they have competed in at least 2 competitions.**
 
 ### World Records
 
@@ -62,11 +73,19 @@ This question has two parts:
 1. Who holds the current world record single? 
 
 ```{r}
-## Add your code here
-
+#This code looks for the current world record single by joining different datasets
+curr_world_record <- rankssingle|>
+  filter(worldRank == 1)|>
+  # join to get name of world Rank 1 people
+  inner_join(persons, by = c("personId" = "id"))|>
+  # join with result to find competition
+  inner_join(results, by = c("personId", "best"))|>
+  select(personName, best, competitionId, worldRank)|>
+  slice(1)
+curr_world_record
 ```
 
-**Write your answer here.**
+**Max Park currently hold the world record single.**
 
 
 On what date was this record set?
@@ -74,22 +93,45 @@ On what date was this record set?
 NOTE: Use the start date of the competition in which the record was set.
 
 ```{r}
-## Add your code here
+## This builds off of the previous code by joining with competition to get start date
+curr_world_record <- rankssingle|>
+  filter(worldRank == 1)|>
+  # join to get name of world Rank 1 people
+  inner_join(persons, by = c("personId" = "id"))|>
+  # join with result to find competition
+  inner_join(results, by = c("personId", "best"))|>
+  # join with competition to get the date
+  inner_join(competitions, by = c("competitionId" = "id"))|>
+  select(personName, best, competitionId, worldRank, year, month, day)|>
+  slice(1)
+curr_world_record
+
 
 ```
 
-**Write your answer here.**
+**On June 11, 2023, the world record was set by Max Park.**
 
 
 
 2. Who *previously* held the world record single? On what date was this previous record set?
 
 ```{r}
-## Add your code here
+## Find who previously held the world record single and the date the record was set
+prev_world_record <- results|>
+  filter(regionalSingleRecord == "WR")|>
+  # join with competition to get the date
+  inner_join(competitions, by = c("competitionId" = "id"))|>
+  # joining with persons to get name
+  inner_join(persons, by = c("personId" = "id"))|>
+  select(personName, best, competitionId, year, month, day)|>
+  arrange(best)|>
+  slice(2)
+prev_world_record
+
 
 ```
 
-**Write your answer here.**
+**Yusheng Du (杜宇生) previously held the world record single on November 24, 2018.**
 
 
 ### Regional Rankings
