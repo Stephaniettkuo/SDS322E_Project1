@@ -384,8 +384,22 @@ scrambles &lt;- read_tsv(&quot;WCA_export_Scrambles.tsv.bz2&quot;)</code></pre>
 WCA? For this question an <em>active speeedcuber</em> is defined as any
 person registered in the WCA who has competed in at least two
 competitions in the years 2022–2024.</p>
-<pre class="r"><code>## Add your code here</code></pre>
-<p><strong>Write your answer here.</strong></p>
+<pre class="r"><code># filter competitions between 2022 and 2024
+comp_22_24 &lt;- competitions|&gt;
+  filter(year &gt;= 2022 &amp; year &lt;= 2024)
+
+# save all active cubers in a new dataset and count how many there are
+active_cuber &lt;- results|&gt;
+  #join on competitionId to filter 22-24 competitions
+  inner_join(comp_22_24, by = c(&quot;competitionId&quot; = &quot;id&quot;))|&gt;
+  group_by(personId)|&gt;
+  summarise(num_competition = n_distinct(competitionId))|&gt;
+  filter(num_competition &gt;= 2)
+nrow(active_cuber)</code></pre>
+<pre><code>## [1] 39482</code></pre>
+<p><strong>There are 39482 active 3x3x3 speedcubers that are registered
+with th WCS between 2022-2024, measured by if they have competed in at
+least 2 competitions.</strong></p>
 </div>
 <div id="world-records" class="section level3">
 <h3>World Records</h3>
@@ -393,19 +407,63 @@ competitions in the years 2022–2024.</p>
 <ol style="list-style-type: decimal">
 <li>Who holds the current world record single?</li>
 </ol>
-<pre class="r"><code>## Add your code here</code></pre>
-<p><strong>Write your answer here.</strong></p>
+<pre class="r"><code>#This code looks for the current world record single by joining different datasets
+curr_world_record &lt;- rankssingle|&gt;
+  filter(worldRank == 1)|&gt;
+  # join to get name of world Rank 1 people
+  inner_join(persons, by = c(&quot;personId&quot; = &quot;id&quot;))|&gt;
+  # join with result to find competition
+  inner_join(results, by = c(&quot;personId&quot;, &quot;best&quot;))|&gt;
+  select(personName, best, competitionId, worldRank)|&gt;
+  slice(1)
+curr_world_record</code></pre>
+<pre><code>## # A tibble: 1 × 4
+##   personName  best competitionId        worldRank
+##   &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;                    &lt;dbl&gt;
+## 1 Max Park     313 PrideInLongBeach2023         1</code></pre>
+<p><strong>Max Park currently hold the world record single.</strong></p>
 <p>On what date was this record set?</p>
 <p>NOTE: Use the start date of the competition in which the record was
 set.</p>
-<pre class="r"><code>## Add your code here</code></pre>
-<p><strong>Write your answer here.</strong></p>
+<pre class="r"><code>## This builds off of the previous code by joining with competition to get start date
+curr_world_record &lt;- rankssingle|&gt;
+  filter(worldRank == 1)|&gt;
+  # join to get name of world Rank 1 people
+  inner_join(persons, by = c(&quot;personId&quot; = &quot;id&quot;))|&gt;
+  # join with result to find competition
+  inner_join(results, by = c(&quot;personId&quot;, &quot;best&quot;))|&gt;
+  # join with competition to get the date
+  inner_join(competitions, by = c(&quot;competitionId&quot; = &quot;id&quot;))|&gt;
+  select(personName, best, competitionId, worldRank, year, month, day)|&gt;
+  slice(1)
+curr_world_record</code></pre>
+<pre><code>## # A tibble: 1 × 7
+##   personName  best competitionId        worldRank  year month   day
+##   &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;                    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 Max Park     313 PrideInLongBeach2023         1  2023     6    11</code></pre>
+<p><strong>On June 11, 2023, the world record was set by Max
+Park.</strong></p>
 <ol start="2" style="list-style-type: decimal">
 <li>Who <em>previously</em> held the world record single? On what date
 was this previous record set?</li>
 </ol>
-<pre class="r"><code>## Add your code here</code></pre>
-<p><strong>Write your answer here.</strong></p>
+<pre class="r"><code>## Find who previously held the world record single and the date the record was set
+prev_world_record &lt;- results|&gt;
+  filter(regionalSingleRecord == &quot;WR&quot;)|&gt;
+  # join with competition to get the date
+  inner_join(competitions, by = c(&quot;competitionId&quot; = &quot;id&quot;))|&gt;
+  # joining with persons to get name
+  inner_join(persons, by = c(&quot;personId&quot; = &quot;id&quot;))|&gt;
+  select(personName, best, competitionId, year, month, day)|&gt;
+  arrange(best)|&gt;
+  slice(2)
+prev_world_record</code></pre>
+<pre><code>## # A tibble: 1 × 6
+##   personName           best competitionId  year month   day
+##   &lt;chr&gt;               &lt;dbl&gt; &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 Yusheng Du (杜宇生)   347 WuhuOpen2018   2018    11    24</code></pre>
+<p><strong>Yusheng Du (杜宇生) previously held the world record single
+on November 24, 2018.</strong></p>
 </div>
 <div id="regional-rankings" class="section level3">
 <h3>Regional Rankings</h3>
@@ -455,8 +513,59 @@ speedcubers (provide their names and WCA IDs) that you have identified
 as “up-and-coming”. There is no one way to answer this question and the
 goal is to provide an analysis of the data that justifies the selection
 of your five names.</p>
-<pre class="r"><code>## Add your code here</code></pre>
-<p><strong>Write your answer here.</strong></p>
+<pre class="r"><code>## Add your code here
+outside_top_10k &lt;- rankssingle |&gt;
+  filter(worldRank &gt; 10000)
+
+results_with_date &lt;- results |&gt;
+  left_join(competitions, 
+            by = c(&quot;competitionId&quot; = &quot;id&quot;)) |&gt;
+  mutate(date = make_date(year, month, day))
+
+improvement &lt;- results_with_date %&gt;%
+  group_by(personId) %&gt;%
+  arrange(date) %&gt;%
+  summarise(
+    first_single = first(best),
+    latest_single = last(best),
+    improvement = first_single - latest_single,
+    competitions = n_distinct(competitionId),
+    last_comp = max(date),
+    .groups = &quot;drop&quot;
+  ) |&gt;
+  filter(last_comp &gt;= ymd(&quot;2024-01-01&quot;))
+
+candidates &lt;- improvement |&gt;
+  inner_join(outside_top_10k, by = c(&quot;personId&quot; = &quot;personId&quot;)) |&gt;
+  filter(
+    improvement &gt;= 3000,
+    latest_single &lt;= 15000,
+    competitions &gt;= 5
+  ) |&gt;
+  arrange(desc(improvement))
+
+candidates_named &lt;- candidates |&gt;
+  left_join(persons, by = c(&quot;personId&quot; = &quot;id&quot;)) |&gt;
+  select(name, personId, latest_single, improvement, worldRank)
+
+candidates_named |&gt;
+  head(n = 5)</code></pre>
+<pre><code>## # A tibble: 5 × 5
+##   name              personId   latest_single improvement worldRank
+##   &lt;chr&gt;             &lt;chr&gt;              &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;
+## 1 Stéphanie Ratto   2022RATT03          9050       18990    207759
+## 2 Steve Clarke      2015CLAR13          6509       16713    184399
+## 3 Shrijan Pal       2011PALS01          1031       15149     10965
+## 4 Yuou Liu (刘禹欧) 2018LIUY25          1924       14363     77733
+## 5 Michael K. Lee    2021LEEM01          6465       14252    193418</code></pre>
+<p><strong>Stéphanie Ratto, Steve Clarke, Shrijan Pal, Yuou Liu, and
+Michael K. Lee are the top 5 speedcubers to keep an eye on in the coming
+year. The metrics chosen were 1) they have recently been improving (over
+3 seconds or more), their latest time was at or under 15 seconds, and
+they compete regularly (5 or more competitions). These variables did not
+choose relative world rank as a factor; rather, it looked at more
+dynamic factors such as latest time, improvement, and
+competitions.</strong></p>
 </div>
 <div id="region-rivalries" class="section level3">
 <h3>Region Rivalries</h3>

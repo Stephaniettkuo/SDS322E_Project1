@@ -197,12 +197,46 @@ Which speed cubers **not** in the top 10,000 (worldwide for single best time) sh
 The idea here is to identify "up-and-coming" speedcubers who are not yet achieving elite times. Come up with a list of **five** speedcubers (provide their names and WCA IDs) that you have identified as "up-and-coming". There is no one way to answer this question and the goal is to provide an analysis of the data that justifies the selection of your five names.
 
 ```{r}
-## Add your code here
+## filtering speedcubers by their improvement, latest time, and if they've competed regularly and recently
+outside_top_10k <- rankssingle |>
+  filter(worldRank > 10000)
 
+results_with_date <- results |>
+  left_join(competitions, 
+            by = c("competitionId" = "id")) |>
+  mutate(date = make_date(year, month, day))
 
+improvement <- results_with_date %>%
+  group_by(personId) %>%
+  arrange(date) %>%
+  summarise(
+    first_single = first(best),
+    latest_single = last(best),
+    improvement = first_single - latest_single,
+    competitions = n_distinct(competitionId),
+    last_comp = max(date),
+    .groups = "drop"
+  ) |>
+  filter(last_comp >= ymd("2024-01-01"))
+
+candidates <- improvement |>
+  inner_join(outside_top_10k, by = c("personId" = "personId")) |>
+  filter(
+    improvement >= 3000,
+    latest_single <= 15000,
+    competitions >= 5
+  ) |>
+  arrange(desc(improvement))
+
+candidates_named <- candidates |>
+  left_join(persons, by = c("personId" = "id")) |>
+  select(name, personId, latest_single, improvement, worldRank)
+
+candidates_named |>
+  head(n = 5)
 ```
 
-**Write your answer here.**
+**Stéphanie Ratto, Steve Clarke, Shrijan Pal, Yuou Liu, and Michael K. Lee are the top 5 speedcubers to keep an eye on in the coming year. The metrics chosen were 1) they have recently been improving (over 3 seconds or more), their latest time was at or under 15 seconds, and they compete regularly (5 or more competitions). These variables did not choose relative world rank as a factor; rather, it looked at more dynamic factors such as latest time, improvement, and competitions.**
 
 
 
