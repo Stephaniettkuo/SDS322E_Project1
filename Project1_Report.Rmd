@@ -141,17 +141,29 @@ This question has two parts:
 1. Amongst all speedcubers, who is the top ranked male speedcuber (for best single solve) in Australia?
 
 ```{r}
-## Add your code here
-
+## Find the top ranked male speedcuber in Australia (best single)
+rankssingle |>
+  inner_join(persons, by = c("personId" = "id")) |>
+  filter(countryId == "Australia", gender == "m") |>
+  arrange(best) |>
+  select(name, personId, best, countryRank, worldRank) |>
+  slice(1)
 ```
 
-**Write your answer here.**
+**Jode Brewster is the top ranked male speedcuber (for best single solve) in Australia.**
 
 
 2. Amongst all speedcubers, who is the top ranked female speedcuber (for best single solve time) in Europe?
 
 ```{r}
-## Add your code here
+## Find the top ranked female speedcuber in Europe (best single)
+rankssingle |>
+  inner_join(persons, by = c("personId" = "id")) |>
+  inner_join(countries, by = c("countryId" = "id")) |>
+  filter(continentId == "_Europe", gender == "f") |>
+  arrange(best) |>
+  select(personId, best, countryId, worldRank) |>
+  slice(1)
 
 ```
 
