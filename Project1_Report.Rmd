@@ -162,12 +162,12 @@ rankssingle |>
   inner_join(countries, by = c("countryId" = "id")) |>
   filter(continentId == "_Europe", gender == "f") |>
   arrange(best) |>
-  select(personId, best, countryId, worldRank) |>
+  select(name.x, personId, best, countryId, worldRank) |>
   slice(1)
 
 ```
 
-**Write your answer here.**
+**Magdalena Pabisz is the top ranked female speedcuber (for best single solve time) in Europe, from Poland, with a best single of 4.24 seconds and a world rank of 20.**
 
 
 
@@ -182,11 +182,32 @@ Having a time below 5 seconds is considered an elite achievement and most speedc
 
 
 ```{r}
-## Add your code here
+## Get top 10 speedcubers by single
+top10 <- rankssingle |>
+  filter(worldRank <= 10)
 
+top10_results <- results |>
+  inner_join(top10, by = "personId") |>
+  inner_join(competitions, by = c("competitionId" = "id")) |>
+  mutate(date = make_date(year, month, day)) |>
+  arrange(personId, date, roundTypeId) |>
+  select(personId, date, roundTypeId, value1, value2, value3, value4, value5)
+
+solves_long <- top10_results |>
+  pivot_longer(cols = value1:value5, names_to = "solve_num", values_to = "time") |>
+  filter(time > 0) |>
+  group_by(personId) |>
+  arrange(date, solve_num, .by_group = TRUE) |>
+  mutate(solve_order = row_number())
+
+sub5_counts <- solves_long |>
+  filter(time < 500) |>
+  summarize(first_sub5_at = min(solve_order), .groups = "drop")
+
+mean(sub5_counts$first_sub5_at)
 ```
 
-**Write your answer here.**
+**On average, the current top 10 speedcubers in the world had to complete approximately 504 solves before achieving a sub-5 second solve.**
 
 
 
@@ -194,12 +215,35 @@ Having a time below 5 seconds is considered an elite achievement and most speedc
 
 
 ```{r}
-## Add your code here
+## Plot solve times over time for Max Park
+top10 <- rankssingle |>
+  filter(worldRank <= 10)
 
+max_park_id <- top10 |>
+  inner_join(persons, by = c("personId" = "id")) |>
+  filter(name == "Max Park") |>
+  pull(personId)
+
+plot_data <- results |>
+  filter(personId == max_park_id) |>
+  inner_join(competitions, by = c("competitionId" = "id")) |>
+  mutate(date = make_date(year, month, day)) |>
+  pivot_longer(cols = value1:value5, names_to = "solve_num", values_to = "time") |>
+  filter(time > 0) |>
+  mutate(time_sec = time / 100)
+
+ggplot(plot_data, aes(x = date, y = time_sec)) +
+  geom_point(alpha = 0.4, color = "steelblue") +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(
+    title = "Max Park's Solve Times Over Time",
+    x = "Date",
+    y = "Solve Time (seconds)"
+  ) 
 ```
 
 
-**Write your answer here.**
+**This plot shows Max Park's 3x3x3 solve times from 2013 to 2024. There is a clear downward trend, with his times improving from around 20 seconds to consistently near 5 seconds. The COVID-19 pandemic gap is visible around 2020-2021, after which his times plateaued at elite levels, culminating in his world record of 3.13 seconds in 2023.**
 
 
 ### Up-and-Coming Speed Cubers
