@@ -206,10 +206,10 @@ results_with_date <- results |>
             by = c("competitionId" = "id")) |>
   mutate(date = make_date(year, month, day))
 
-improvement <- results_with_date %>%
-  group_by(personId) %>%
-  arrange(date) %>%
-  summarise(
+improvement <- results_with_date |>
+  group_by(personId) |>
+  arrange(date) |>
+  summarize(
     first_single = first(best),
     latest_single = last(best),
     improvement = first_single - latest_single,
@@ -250,18 +250,28 @@ To answer this question, characterize each person using their best *average* sco
 
 Before attempting to answer the question, state what you expect the answer to be below.
 
-**Write your expectation here.**
+**Both regions seem to have talented speedcubers, but I might go with Europe (knowing nothing else about speedcubing) purely because its population is higher; therefore it is possible they might have a higher proportion of better average scores if they have more of a community.**
 
 
 
 ```{r}
-## Add your code here
-
+## understanding European vs North American speedcuber speeds
+ranksaverage |>
+  group_by(personId) |>
+  summarize(best_overall = min(best, na.rm = TRUE)) |>
+  inner_join(persons,  by = c("personId" = "id")) |>
+  inner_join(countries, by = c("countryId" = "id")) |>
+  filter(continentId %in% c("_Europe", "_North America")) |>
+  group_by(continentId) |>
+  summarize(
+    mean_best_average = mean(best_overall, na.rm = TRUE)
+  ) |>
+  arrange(mean_best_average)
 ```
 
 What do you conclude about speedcubers in Europe vs. North America?
 
-**Write you answer here.**
+**Based off the mean best average for North America and Europe, North America has a slightly lower mean, meaning that the average times in the region are faster. (Interestingly enough, after looking at the dataset, there are more entries for North America than Europe, which does not correlate with the initial postulation that there were more speedcubers in Europe given the higher population). Though one metric is not enough to definitely say which region has the faster group in general, based off values in this dataset, North American speedcubers are faster on average.**
 
 
 ### Alternative Explanations
@@ -274,14 +284,25 @@ Develop an alternative explanation/hypothesis regarding speedcubers from Europe 
 
 If the results from the previous question were unexpected, make use of systems thinking to develop an alternative hypothesis. If the results were consistent with your expectations, then use skeptical thinking. In either case, you should present an analysis that shows evidence for or against this alternative explanation relative to the conclusion that you made in the previous question.
 
-**State your alternative explanation here.**
+**The new hypothesis would be that North American speedcubers have faster times on average because there are more participants than in Europe, increasing the amount of cubing communities and support, which could correspond to faster times.**
 
 ```{r}
-## Add your code here
+## understanding European vs North American speedcuber speeds and comparing the number of participants
+continent_summary <- ranksaverage |>
+  inner_join(persons, by = c("personId" = "id")) |>
+  inner_join(countries, by = c("countryId" = "id")) |>
+  filter(continentId %in% c("_Europe", "_North America")) |>
+  group_by(continentId) |>
+  summarize(
+    mean_best_average = mean(best, na.rm = TRUE),  # each person counts equally
+    n_participants   = n_distinct(personId)
+  ) %>%
+  arrange(mean_best_average)
 
+continent_summary
 ```
 
-**Summarize the results of your alternative analysis here.**
+**As shown in the n_participants column, North America has 5000 more participants than Europe. This supports the hypothesis. An interesting point is that there are only 5000 participants more and the mean average time is only around 35 seconds faster. These are both small deltas.**
 
 
 
@@ -299,4 +320,8 @@ essentially as you expected?
 
 * Report the contribution of each member (i.e. who did what).
 
-**answer goes here**
+**The most challenging part of the project was having to connect the dots of which functions to use. Making design decisions on our own about whether to create new tables or how to order larger chunks of code strengthened our data analysis brains. Though we only recently covered joins in class, we learned that these were some of the most common functions in our code, because datasets typically don't have all the information one needs.**
+
+**There were two unexpected data points. One was that Yusheng Du's record took 5 years to break. This was surprising because COVID-19 was two years after the record was set, and given that more people took up cubing during COVID, Max Park breaking the record in 2023 was unexpected. Another surprise was that North Americans have more participants in speedcubing than Europe, given Europe's higher population numbers and density. Other than that, the data matched up with our expectations.**
+
+**We completed this project on our own with the help of R reference manuals and google searches. Stephanie worked on the questions Active Speed Cubers and World Records, Tony completed Regional Rankings and Time Until Sub-5, and Annika completed Up-and-coming Speed Cubers, Region Rivalries, and drafted the discussion (which we all had input on).**
